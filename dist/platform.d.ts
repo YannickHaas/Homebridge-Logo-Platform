@@ -1,0 +1,40 @@
+import { API, AccessoryPlugin, Service, Characteristic, StaticPlatformPlugin, Logging, PlatformConfig } from "homebridge";
+import { InfluxDBLogger } from './influxDB';
+import { Queue } from "./queue";
+export declare class LogoHomebridgePlatform implements StaticPlatformPlugin {
+    readonly log: Logging;
+    readonly config: PlatformConfig;
+    readonly api: API;
+    readonly Service: typeof Service;
+    readonly Characteristic: typeof Characteristic;
+    logo: any;
+    ip: string;
+    interface: string;
+    port: number;
+    logoType: string;
+    local_TSAP: number;
+    remote_TSAP: number;
+    debugMsgLog: number;
+    retryCount: number;
+    queue: Queue;
+    queueInterval: number;
+    queueSize: number;
+    queueMinSize: number;
+    updateTimer: NodeJS.Timeout | null;
+    accessoriesArray: any[];
+    manufacturer: string;
+    model: string;
+    firmwareRevision: string;
+    pushButton: number;
+    loggerType: string;
+    loggerInterval: number;
+    influxDB: InfluxDBLogger;
+    FakeGatoHistoryService: any;
+    constructor(log: Logging, config: PlatformConfig, api: API);
+    accessories(callback: (foundAccessories: AccessoryPlugin[]) => void): void;
+    sendQueueItems(): void;
+    isAnalogLogoAddress(addr: string): boolean;
+    startUpdateTimer(): void;
+    stopUpdateTimer(): void;
+}
+//# sourceMappingURL=platform.d.ts.map

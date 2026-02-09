@@ -1,0 +1,41 @@
+import { AccessoryPlugin, API, Service, CharacteristicValue } from 'homebridge';
+export declare class GaragedoorPlatformAccessory implements AccessoryPlugin {
+    private model;
+    private api;
+    private service;
+    private information;
+    private subs;
+    services: Service[];
+    private platform;
+    private device;
+    private pushButton;
+    private logging;
+    private updateCurrentDoorStateAndTargetDoorStateQueued;
+    private updateCurrentDoorStateQueued;
+    private updateTargetDoorStateQueued;
+    private updateObstructionDetectedQueued;
+    private currentDoorStateIsTargetDoorStateInLogo;
+    private accStates;
+    name: string;
+    isParentAccessory: boolean;
+    constructor(api: API, platform: any, device: any, parent?: any);
+    errorCheck(): void;
+    checkDoorState(): number;
+    getServices(): Service[];
+    setTargetDoorState(value: CharacteristicValue): Promise<void>;
+    getCurrentDoorState(): Promise<CharacteristicValue>;
+    getTargetDoorState(): Promise<CharacteristicValue>;
+    getObstructionDetected(): Promise<CharacteristicValue>;
+    updateCurrentDoorState(): void;
+    updateTargetDoorState(): void;
+    updateCurrentDoorStateAndTargetDoorState(): void;
+    updateObstructionDetected(): void;
+    updateAnalogCurrentDoorState(): void;
+    updateAnalogTargetDoorState(): void;
+    updateAnalogCurrentDoorStateAndTargetDoorState(): void;
+    updateDigitalCurrentDoorState(): void;
+    updateDigitalTargetDoorState(): void;
+    updateDigitalCurrentDoorStateAndTargetDoorState(): void;
+    logAccessory(): void;
+}
+//# sourceMappingURL=garagedoorPlatformAccessory.d.ts.map

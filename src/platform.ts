@@ -14,7 +14,7 @@ HDMI Pi:
 import { API, AccessoryPlugin, Service, Characteristic, StaticPlatformPlugin, Logging, PlatformConfig } from "homebridge";
 
 import { ModBusLogo } from "./modbus-logo";
-import { Snap7Logo }  from "./snap7-logo";
+import { Snap7Logo } from "./snap7-logo";
 import { InfluxDBLogger } from './influxDB';
 import { Queue, QueueSendItem, QueueReceiveItem } from "./queue";
 
@@ -22,38 +22,38 @@ import { ErrorNumber } from "./error";
 import { LoggerType, LoggerInterval } from "./logger";
 import { LogoType, LogoInterface, LogoDefault, Accessory } from "./logo";
 
-import { SwitchPlatformAccessory }            from './accessories/switchPlatformAccessory';
-import { LightbulbPlatformAccessory }         from './accessories/lightbulbPlatformAccessory';
-import { BlindPlatformAccessory }             from './accessories/blindPlatformAccessory';
-import { WindowPlatformAccessory }            from './accessories/windowPlatformAccessory';
-import { GaragedoorPlatformAccessory }        from './accessories/garagedoorPlatformAccessory';
-import { ThermostatPlatformAccessory }        from './accessories/thermostatPlatformAccessory';
-import { IrrigationSystemPlatformAccessory }  from './accessories/irrigationSystemPlatformAccessory';
-import { ValvePlatformAccessory }             from './accessories/valvePlatformAccessory';
-import { FanPlatformAccessory }               from './accessories/fanPlatformAccessory';
+import { SwitchPlatformAccessory } from './accessories/switchPlatformAccessory';
+import { LightbulbPlatformAccessory } from './accessories/lightbulbPlatformAccessory';
+import { BlindPlatformAccessory } from './accessories/blindPlatformAccessory';
+import { WindowPlatformAccessory } from './accessories/windowPlatformAccessory';
+import { GaragedoorPlatformAccessory } from './accessories/garagedoorPlatformAccessory';
+import { ThermostatPlatformAccessory } from './accessories/thermostatPlatformAccessory';
+import { IrrigationSystemPlatformAccessory } from './accessories/irrigationSystemPlatformAccessory';
+import { ValvePlatformAccessory } from './accessories/valvePlatformAccessory';
+import { FanPlatformAccessory } from './accessories/fanPlatformAccessory';
 import { FilterMaintenancePlatformAccessory } from './accessories/filterMaintenancePlatformAccessory';
-import { OutletPlatformAccessory }            from './accessories/outletPlatformAccessory';
-import { OtherPlatformAccessory }             from './accessories/otherPlatformAccessory';
+import { OutletPlatformAccessory } from './accessories/outletPlatformAccessory';
+import { OtherPlatformAccessory } from './accessories/otherPlatformAccessory';
 
-import { LightSensorPlatformAccessory }         from './sensors/lightSensorPlatformAccessory';
-import { MotionSensorPlatformAccessory }        from './sensors/motionSensorPlatformAccessory';
-import { ContactSensorPlatformAccessory }       from './sensors/contactSensorPlatformAccessory';
-import { SmokeSensorPlatformAccessory }         from './sensors/smokeSensorPlatformAccessory';
-import { TemperatureSensorPlatformAccessory }   from './sensors/temperatureSensorPlatformAccessory';
-import { HumiditySensorPlatformAccessory }      from './sensors/humiditySensorPlatformAccessory';
+import { LightSensorPlatformAccessory } from './sensors/lightSensorPlatformAccessory';
+import { MotionSensorPlatformAccessory } from './sensors/motionSensorPlatformAccessory';
+import { ContactSensorPlatformAccessory } from './sensors/contactSensorPlatformAccessory';
+import { SmokeSensorPlatformAccessory } from './sensors/smokeSensorPlatformAccessory';
+import { TemperatureSensorPlatformAccessory } from './sensors/temperatureSensorPlatformAccessory';
+import { HumiditySensorPlatformAccessory } from './sensors/humiditySensorPlatformAccessory';
 import { CarbonDioxideSensorPlatformAccessory } from './sensors/carbonDioxideSensorPlatformAccessory';
-import { AirQualitySensorPlatformAccessory }    from './sensors/airQualitySensorPlatformAccessory';
-import { LeakSensorPlatformAccessory }          from './sensors/leakSensorPlatformAccessory';
-import { WatchdogPlatformAccessory }            from './sensors/watchdogPlatformAccessory';
+import { AirQualitySensorPlatformAccessory } from './sensors/airQualitySensorPlatformAccessory';
+import { LeakSensorPlatformAccessory } from './sensors/leakSensorPlatformAccessory';
+import { WatchdogPlatformAccessory } from './sensors/watchdogPlatformAccessory';
 
 const pjson = require('../package.json');
 
 export class LogoHomebridgePlatform implements StaticPlatformPlugin {
-  
-  public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
-  public logo:  any;
+  public readonly Service: typeof Service;
+  public readonly Characteristic: typeof Characteristic;
+
+  public logo: any;
 
   public ip: string;
   public interface: string;
@@ -68,12 +68,12 @@ export class LogoHomebridgePlatform implements StaticPlatformPlugin {
   public queueInterval: number;
   public queueSize: number;
   public queueMinSize: number;
-  public updateTimer: any;
+  public updateTimer: NodeJS.Timeout | null = null;
   public accessoriesArray: any[];
-  public manufacturer:     string;
-  public model:            string;
+  public manufacturer: string;
+  public model: string;
   public firmwareRevision: string;
-  public pushButton:       number;
+  public pushButton: number;
 
   public loggerType: string;
   public loggerInterval: number;
@@ -82,27 +82,29 @@ export class LogoHomebridgePlatform implements StaticPlatformPlugin {
   public FakeGatoHistoryService: any;
 
   constructor(
-    public readonly log:    Logging,
+    public readonly log: Logging,
     public readonly config: PlatformConfig,
-    public readonly api:    API,
+    public readonly api: API,
   ) {
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
     // this.log.debug('Finished initializing platform:', this.config.name);
 
-    this.ip            =           this.config.ip;
-    this.interface     =           this.config.interface        || LogoInterface.Modbus;
-    this.port          =           this.config.port             || LogoDefault.Port;
-    this.logoType      =           this.config.logoType         || LogoType.T_0BA7;
-    this.local_TSAP    = parseInt( this.config.localTSAP,  16 ) || LogoDefault.LocalTSAP;
-    this.remote_TSAP   = parseInt( this.config.remoteTSAP, 16 ) || LogoDefault.RemoteTSAP;
-    this.debugMsgLog   =           this.config.debugMsgLog      || LogoDefault.DebugMsgLog;
-    this.retryCount    =           this.config.retryCount       || LogoDefault.RetryCount;
-    this.queueInterval =           this.config.queueInterval    || LogoDefault.QueueInterval;
-    this.queueSize     =           this.config.queueSize        || LogoDefault.QueueSize;
-    this.queueMinSize  =                                           LogoDefault.QueueMinSize;
+    this.ip = this.config.ip;
+    this.interface = this.config.interface || LogoInterface.Modbus;
+    this.port = this.config.port || LogoDefault.Port;
+    this.logoType = this.config.logoType || LogoType.T_0BA7;
+    this.local_TSAP = parseInt(this.config.localTSAP, 16) || LogoDefault.LocalTSAP;
+    this.remote_TSAP = parseInt(this.config.remoteTSAP, 16) || LogoDefault.RemoteTSAP;
+    this.debugMsgLog = this.config.debugMsgLog || LogoDefault.DebugMsgLog;
+    this.retryCount = this.config.retryCount || LogoDefault.RetryCount;
+    this.queueInterval = this.config.queueInterval || LogoDefault.QueueInterval;
+    this.queueSize = this.config.queueSize || LogoDefault.QueueSize;
+    this.queueMinSize = LogoDefault.QueueMinSize;
 
-    this.loggerType     = this.config.loggerType     || LoggerType.None;
+    this.loggerType = this.config.loggerType || LoggerType.None;
     this.loggerInterval = this.config.loggerInterval || LoggerInterval.T_5Min;
-    this.influxDB       = new InfluxDBLogger(this, this.config);
+    this.influxDB = new InfluxDBLogger(this, this.config);
     this.FakeGatoHistoryService = require('fakegato-history')(this.api);
 
     if (this.interface == LogoInterface.Modbus) {
@@ -111,13 +113,13 @@ export class LogoHomebridgePlatform implements StaticPlatformPlugin {
       this.logo = new Snap7Logo(this.logoType, this.ip, this.local_TSAP, this.remote_TSAP, this.debugMsgLog, this.log, (this.retryCount + 1));
     }
 
-    this.queue            = new Queue(this.queueSize);
+    this.queue = new Queue(this.queueSize);
     this.accessoriesArray = [];
-    this.manufacturer     = pjson.author.name;
-    this.model            = pjson.model;
+    this.manufacturer = pjson.author.name;
+    this.model = pjson.model;
     this.firmwareRevision = pjson.version;
-    this.pushButton       = (this.config.pushButton ? 1 : 0);
-    
+    this.pushButton = (this.config.pushButton ? 1 : 0);
+
     if (Array.isArray(this.config.devices)) {
 
       const configDevices = this.config.devices;
@@ -130,158 +132,158 @@ export class LogoHomebridgePlatform implements StaticPlatformPlugin {
 
         switch (device.type) {
           case Accessory.Switch:
-            if (!(device.parentAccessory)){
-              this.accessoriesArray.push( new SwitchPlatformAccessory(this.api, this, device) );
+            if (!(device.parentAccessory)) {
+              this.accessoriesArray.push(new SwitchPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
-      
+
           case Accessory.Lightbulb:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new LightbulbPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new LightbulbPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 2;
             break;
 
           case Accessory.Blind:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new BlindPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new BlindPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 4;
             break;
-          
+
           case Accessory.Window:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new WindowPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new WindowPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 4;
             break;
 
           case Accessory.Garagedoor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new GaragedoorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new GaragedoorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 3;
             break;
 
           case Accessory.Thermostat:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new ThermostatPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new ThermostatPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 4;
             break;
 
           case Accessory.IrrigationSystem:
-            this.accessoriesArray.push( new IrrigationSystemPlatformAccessory(this.api, this, device) );
+            this.accessoriesArray.push(new IrrigationSystemPlatformAccessory(this.api, this, device));
             this.queueMinSize += 5;
             break;
 
           case Accessory.Valve:
-            if (!(device.valveParentIrrigationSystem)){
-              this.accessoriesArray.push( new ValvePlatformAccessory(this.api, this, device) );
+            if (!(device.valveParentIrrigationSystem)) {
+              this.accessoriesArray.push(new ValvePlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 5;
             break;
 
           case Accessory.Fan:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new FanPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new FanPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 3;
             break;
 
           case Accessory.FilterMaintenance:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new FilterMaintenancePlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new FilterMaintenancePlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 2;
             break;
 
           case Accessory.Outlet:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new OutletPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new OutletPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.Other:
-            this.accessoriesArray.push( new OtherPlatformAccessory(this.api, this, device) );
+            this.accessoriesArray.push(new OtherPlatformAccessory(this.api, this, device));
             this.queueMinSize += 1;
             break;
 
           case Accessory.LightSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new LightSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new LightSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.MotionSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new MotionSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new MotionSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.ContactSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new ContactSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new ContactSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.SmokeSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new SmokeSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new SmokeSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.TemperatureSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new TemperatureSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new TemperatureSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.HumiditySensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new HumiditySensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new HumiditySensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.CarbonDioxideSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new CarbonDioxideSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new CarbonDioxideSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 3;
             break;
 
           case Accessory.AirQualitySensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new AirQualitySensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new AirQualitySensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
 
           case Accessory.LeakSensor:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new LeakSensorPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new LeakSensorPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 2;
             break;
 
-            case Accessory.Watchdog:
-              if (!(device.parentAccessory)) {
-                this.accessoriesArray.push( new WatchdogPlatformAccessory(this.api, this, device) );
-              }
-              this.queueMinSize += 1;
-              break;
-        
+          case Accessory.Watchdog:
+            if (!(device.parentAccessory)) {
+              this.accessoriesArray.push(new WatchdogPlatformAccessory(this.api, this, device));
+            }
+            this.queueMinSize += 1;
+            break;
+
           default:
             if (!(device.parentAccessory)) {
-              this.accessoriesArray.push( new SwitchPlatformAccessory(this.api, this, device) );
+              this.accessoriesArray.push(new SwitchPlatformAccessory(this.api, this, device));
             }
             this.queueMinSize += 1;
             break;
@@ -293,7 +295,7 @@ export class LogoHomebridgePlatform implements StaticPlatformPlugin {
     if (this.queueMinSize > this.queueSize) {
       this.log.warn('Queue size is to small! Minimum size for all accessories and sensors is:', this.queueMinSize);
     }
-    
+
     this.startUpdateTimer();
 
   }
@@ -343,12 +345,14 @@ export class LogoHomebridgePlatform implements StaticPlatformPlugin {
   startUpdateTimer() {
     this.updateTimer = setInterval(() => {
       this.sendQueueItems();
-    }, this.queueInterval );
+    }, this.queueInterval);
   }
   stopUpdateTimer() {
-    clearInterval(this.updateTimer);
-    this.updateTimer = 0;
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+      this.updateTimer = null;
+    }
   }
-  
+
 }
 // https://developers.homebridge.io/#/config-schema#enabling-support-for-your-plugin
